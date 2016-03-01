@@ -12,10 +12,17 @@ import Control.Concurrent.STM.TVar
 import qualified Network.WebSockets as WS
 import System.IO
 
+-- Todo:
+--   - Options passed on startup -
+--     * Make a way to define root path
+--     * timeToDie for pages
+--     * interval time
+--     * Port number
+
 -- Set output encoding, start our server, then start our application
 main :: IO ()
 main = do
   hSetEncoding stdout utf8
   pageState <- liftIO $ newTVarIO newState
-  _ <- forkIO $! pageManager pageState
+  _ <- void $! forkIO $! pageManager pageState
   WS.runServer "0.0.0.0" 4242 $! application pageState
