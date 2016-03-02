@@ -4,12 +4,10 @@ import Config
 import Helpers
 
 import Control.Lens
-import qualified Data.Text as T
+import Control.Monad.IO.Class (liftIO)
 import qualified Data.HashMap.Strict as HM
 import Control.Concurrent (threadDelay)
 import Control.Concurrent.STM
-import Control.Concurrent.STM.TVar
-import Control.Monad (void)
 
 -- This will oversee the pages stored in memory
 --   1. Remove all data with _timeToDie less than or equal to 0
@@ -23,7 +21,6 @@ pageManager state = do
   lossyWritePages state
   managePages state
   threadDelay interval
-  pageManager state
 
 -- This is a `lossy` command because it has a chance to miss some files.
 -- This shouldnt be a problem because the next tick will get the files.
@@ -31,8 +28,8 @@ pageManager state = do
 lossyWritePages :: ServerState -> IO ()
 lossyWritePages state = do
   cState <- readTVarIO state
-  let pages          = _pages cState
-      pagesNotOnDisk = HM.elems $! checkDisk pages
+  let myPages        = view pages cState
+      pagesNotOnDisk = HM.elems $! checkDisk myPages
   pagesWritten <- mapM writePageToDisk pagesNotOnDisk
   mapM_ (setHardDiskFlag state) pagesWritten
 
@@ -51,7 +48,7 @@ setHDFlag p = set onHarddisk True p
 -- writes the page to disk, discarding any return data, then returns filepath
 writePageToDisk :: Page -> IO FilePath
 writePageToDisk p = do
-  _ <- void $! writeData (view pagePath p) (view pageData p) 
+  writeData (view pagePath p) (view pageData p) 
   return $! view pagePath p
 
 -- Returns a hashmap of all the pages that arent already written to harddisk

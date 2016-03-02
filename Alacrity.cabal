@@ -21,6 +21,7 @@ executable alacrity
                      , BangPatterns
                      , DeriveGeneric
                      , TemplateHaskell
+  ghc-options:     -Wall
   -- other-modules:       
   -- other-extensions:    
   build-depends:       base >=4.7 && <4.8

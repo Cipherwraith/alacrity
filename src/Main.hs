@@ -9,7 +9,6 @@ import Control.Monad
 import Control.Monad.IO.Class (liftIO)
 import Control.Concurrent
 import Control.Concurrent.STM
-import Control.Concurrent.STM.TVar
 import qualified Network.WebSockets as WS
 import System.IO
 
@@ -29,5 +28,5 @@ main :: IO ()
 main = do
   hSetEncoding stdout utf8
   pageState <- liftIO $ newTVarIO newState
-  _ <- void $! forkIO $! pageManager pageState
+  _ <- forkIO $! forever $! pageManager pageState
   WS.runServer "0.0.0.0" serverPort $! application pageState

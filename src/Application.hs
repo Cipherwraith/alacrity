@@ -16,9 +16,10 @@ import qualified Data.HashMap.Strict as HM
 import Data.Maybe
 import Control.Lens
 import Config
-import System.FilePath ((</>))
+-- import System.FilePath ((</>))
 import System.Directory (doesFileExist)
 import Helpers
+import Data.Either
 
 application :: ServerState -> WS.ServerApp
 application state pending = do
@@ -68,14 +69,39 @@ apply state (Store path dat) = do
       set pages updatedPages s
   return $! DataSaved path
 
--- View data from the state
---   modify later to also check harddisk if not stored in state
+-- View data from the state. Check on harddisk if not in state
 apply state (View path) = do
   currState <- readTVarIO state
   let reqData = HM.lookup path $! _pages currState
   if isNothing reqData
     then do
       myData <- findData path
-      return $! myData
-    else return $! ViewData path (_pageData $! fromJust reqData)
+      addDataToState state path myData
+    else do
+      -- reset cache timeout
+      resetCacheTimeout state path
+      return $! ViewData path (_pageData $! fromJust reqData)
+
+resetCacheTimeout :: ServerState -> FilePath -> IO ()
+resetCacheTimeout state fp = do
+  atomically $ do
+    cState <- readTVar state
+    let updatedPages = HM.adjust resetTimeout fp (view pages cState)
+    modifyTVar' state $ \s -> do
+      set pages updatedPages s
+
+resetTimeout :: Page -> Page
+resetTimeout p = set timeToDie deathCounter p
+
+addDataToState :: ServerState -> FilePath -> Either ErrorText FileData -> IO ServerOut
+addDataToState _ _ (Left err) = return $ ErrorMsg err
+addDataToState state path (Right dat) = do
+  atomically $ do
+    cState <- readTVar state
+    let newPage      = Page path dat deathCounter True
+        updatedPages = HM.insert path newPage (_pages cState)
+    modifyTVar' state $ \s ->
+      set pages updatedPages s
+    return $! ViewData path dat
+  
 
