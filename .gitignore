@@ -14,3 +14,6 @@ cabal.sandbox.config
 *.aux
 *.hp
 .stack-work/
+curr.txt
+*.swp
+upload.sh
