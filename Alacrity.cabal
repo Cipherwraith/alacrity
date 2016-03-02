@@ -8,7 +8,7 @@ version:             0.1.0.0
 license:             GPL-3
 license-file:        LICENSE
 author:              Ron Watkins
-maintainer:          cipherwraith666@gmail.com
+maintainer:          ron@bytesec.org
 -- copyright:           
 category:            Web
 build-type:          Simple
