@@ -1,1 +1,1 @@
-# alacrity
+# alacrity### Error codes* `e0001` = "error: file does not exist"* `e0002` = "error: cant decode message"* `e0003` = "error: no data received"* `e0004` = "error: couldnt parse command"

@@ -25,4 +25,4 @@ main = do
   hSetEncoding stdout utf8
   pageState <- liftIO $ newTVarIO newState
   _ <- void $! forkIO $! pageManager pageState
-  WS.runServer "0.0.0.0" 4242 $! application pageState
+  WS.runServer "0.0.0.0" 6666 $! application pageState

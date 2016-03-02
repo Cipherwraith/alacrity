@@ -9,11 +9,15 @@ import Control.Monad.IO.Class (liftIO)
 import qualified Data.ByteString.Char8 as B
 import Data.Aeson ((.:), (.=), (.:?), decode, encode, ToJSON(..), object, FromJSON(..), Value(..), decodeStrict)
 import qualified Data.Text as T
+import qualified Data.Text.IO as T
 import qualified Data.Text.Encoding as T
 import qualified Data.ByteString.Lazy as BL
 import qualified Data.HashMap.Strict as HM
 import Data.Maybe
 import Control.Lens
+import Config
+import System.FilePath ((</>))
+import System.Directory (doesFileExist)
 
 application :: ServerState -> WS.ServerApp
 application state pending = do
@@ -41,22 +45,23 @@ prepByteString = T.decodeUtf8 . BL.toStrict
 
 parseMsg :: T.Text -> Either ErrorText Command
 parseMsg msg = case decodeMsg msg of
-  Nothing -> Left "error: cant decode message"
+  Nothing -> Left "e0002" -- "error: cant decode message"
   Just cmd -> parseCommand cmd
 
 parseCommand :: Msg -> Either ErrorText Command
 parseCommand (Msg cmd path dat) 
   | cmd == "store" = 
       case dat of
-        Nothing   -> Left "error: no data received"
+        Nothing   -> Left "e0003" -- "error: no data received"
         Just dat' -> Right $! Store path dat'
   | cmd == "view"  = Right $ View path
-  | otherwise = Left "error: couldnt parse command"
+  | otherwise      = Left "e0004" -- "error: couldnt parse command"
 
 -- Responds to a connection with a message
 respond :: WS.Connection -> T.Text -> IO ()
 respond c t = WS.sendTextData c t
 
+-- Decode a proper json msg into native haskell data type
 decodeMsg :: T.Text -> Maybe Msg
 decodeMsg = decodeStrict . T.encodeUtf8
 
@@ -79,6 +84,25 @@ apply state (View path) = do
   currState <- readTVarIO state
   let reqData = HM.lookup path $! _pages currState
   if (isNothing reqData)
-    -- probably should check harddisk also
-    then return $! ErrorMsg "error: couldnt find file in cache"
+    then do
+      myData <- findData path
+      return $! myData
     else return $! ViewData path (_data $! fromJust reqData)
+
+-- Find file data on the harddisk if its not in cache
+findData :: FilePath -> IO ServerOut
+findData path = do
+  let myPath = serverRoot </> path
+  fileExistence <- doesFileExist myPath
+  if fileExistence
+    then do
+      myData <- T.readFile $ serverRoot </> path
+      return $! ViewData path myData
+    else
+      return $! ErrorMsg "e0001" -- "error: file does not exist"
+  
+writeData :: FilePath -> T.Text -> IO ()
+writeData path dat = do
+  let myPath = serverRoot </> path
+  undefined
+
