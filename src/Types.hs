@@ -61,3 +61,4 @@ instance FromJSON Msg where
     (v .:? "data") 
 
 
+makeLenses ''State

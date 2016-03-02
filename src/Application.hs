@@ -11,6 +11,9 @@ import Data.Aeson ((.:), (.=), (.:?), decode, encode, ToJSON(..), object, FromJS
 import qualified Data.Text as T
 import qualified Data.Text.Encoding as T
 import qualified Data.ByteString.Lazy as BL
+import qualified Data.HashMap.Strict as HM
+import Data.Maybe
+import Control.Lens
 
 application :: ServerState -> WS.ServerApp
 application state pending = do
@@ -54,6 +57,31 @@ parseCommand (Msg cmd path dat)
 respond :: WS.Connection -> T.Text -> IO ()
 respond c t = WS.sendTextData c t
 
-decodeMsg = undefined
-apply = undefined
+decodeMsg :: T.Text -> Maybe Msg
+decodeMsg = decodeStrict . T.encodeUtf8
 
+-- Apply the command to the server state and receive an output
+apply :: ServerState -> Command -> IO ServerOut
+
+-- Store data in the state
+apply state (Store path dat) = do
+  atomically $ do
+    currState <- readTVar state
+    let newPage      = Page path dat deathCounter False
+        updatedPages = HM.insert path newPage (_pages currState)
+    modifyTVar' state $ \(s) -> do
+      set pages updatedPages s
+  return $! DataSaved path
+
+-- View data from the state
+--   modify later to also check harddisk if not stored in state
+apply state (View path) = do
+  currState <- readTVarIO state
+  let reqData = HM.lookup path $! _pages currState
+  if (isNothing reqData)
+    -- probably should check harddisk also
+    then return $! ErrorMsg "error: couldnt find file in cache"
+    else return $! ViewData path (_data $! fromJust reqData)
+
+-- time to die constant in seconds. need to change to option later
+deathCounter = 10
