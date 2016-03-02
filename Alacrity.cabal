@@ -15,7 +15,7 @@ build-type:          Simple
 extra-source-files:  README.md
 cabal-version:       >=1.10
 
-executable Alacrity
+executable alacrity
   main-is:             Main.hs
   extensions:          OverloadedStrings
                      , BangPatterns
