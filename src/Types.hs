@@ -16,10 +16,10 @@ type ServerState = TVar State
 
 -- Data about our page stored in memory
 data Page = Page { 
-    _absolutePath :: FilePath -- Path where the file is stored
-  , _data         :: FileData -- Data stored in the file; UTF8 format
-  , _timeToDie    :: Int      -- Seconds until the data is removed from State cache
-  , _onHarddisk   :: Bool     -- Whether or not this page has been saved to hard disk
+    _pagePath   :: FilePath -- Path where the file is stored
+  , _pageData   :: FileData -- Data stored in the file; UTF8 format
+  , _timeToDie  :: Int      -- Seconds until the data is removed from State cache
+  , _onHarddisk :: Bool     -- Whether or not this page has been saved to hard disk
   } deriving (Show)
 
 -- Cache pages in the server state until their _timeToDie hits 0
@@ -61,3 +61,4 @@ instance FromJSON Msg where
     (v .:? "data") 
 
 makeLenses ''State
+makeLenses ''Page

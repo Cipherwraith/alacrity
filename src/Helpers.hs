@@ -14,7 +14,7 @@ import Data.Aeson ((.:), (.=), (.:?), decode, encode, ToJSON(..), object, FromJS
 writeData :: FilePath -> T.Text -> IO ()
 writeData path dat = do
   let myPath = serverRoot </> path
-  undefined
+  T.writeFile myPath dat
 
 -- Find file data on the harddisk if its not in cache
 findData :: FilePath -> IO ServerOut
@@ -33,7 +33,7 @@ prepByteString = T.decodeUtf8 . BL.toStrict
 
 -- Responds to a connection with a message
 respond :: WS.Connection -> T.Text -> IO ()
-respond c t = WS.sendTextData c t
+respond = WS.sendTextData 
 
 -- Decode a proper json msg into native haskell data type
 decodeMsg :: T.Text -> Maybe Msg

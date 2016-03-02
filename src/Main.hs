@@ -3,6 +3,7 @@ module Main where
 import Application
 import PageManager
 import Types
+import Config
 
 import Control.Monad
 import Control.Monad.IO.Class (liftIO)
@@ -25,4 +26,4 @@ main = do
   hSetEncoding stdout utf8
   pageState <- liftIO $ newTVarIO newState
   _ <- void $! forkIO $! pageManager pageState
-  WS.runServer "0.0.0.0" 6666 $! application pageState
+  WS.runServer "0.0.0.0" serverPort $! application pageState

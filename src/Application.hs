@@ -64,7 +64,7 @@ apply state (Store path dat) = do
     currState <- readTVar state
     let newPage      = Page path dat deathCounter False
         updatedPages = HM.insert path newPage (_pages currState)
-    modifyTVar' state $ \(s) -> do
+    modifyTVar' state $ \s -> 
       set pages updatedPages s
   return $! DataSaved path
 
@@ -73,9 +73,9 @@ apply state (Store path dat) = do
 apply state (View path) = do
   currState <- readTVarIO state
   let reqData = HM.lookup path $! _pages currState
-  if (isNothing reqData)
+  if isNothing reqData
     then do
       myData <- findData path
       return $! myData
-    else return $! ViewData path (_data $! fromJust reqData)
+    else return $! ViewData path (_pageData $! fromJust reqData)
 
