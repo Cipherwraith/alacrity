@@ -82,6 +82,3 @@ apply state (View path) = do
     -- probably should check harddisk also
     then return $! ErrorMsg "error: couldnt find file in cache"
     else return $! ViewData path (_data $! fromJust reqData)
-
--- time to die constant in seconds. need to change to option later
-deathCounter = 10
