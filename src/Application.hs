@@ -18,6 +18,7 @@ import Control.Lens
 import Config
 import System.FilePath ((</>))
 import System.Directory (doesFileExist)
+import Helpers
 
 application :: ServerState -> WS.ServerApp
 application state pending = do
@@ -40,9 +41,6 @@ report conn serverOut = do
   let output = prepByteString $ encode serverOut
   respond conn output
 
-prepByteString :: BL.ByteString -> T.Text
-prepByteString = T.decodeUtf8 . BL.toStrict
-
 parseMsg :: T.Text -> Either ErrorText Command
 parseMsg msg = case decodeMsg msg of
   Nothing -> Left "e0002" -- "error: cant decode message"
@@ -56,14 +54,6 @@ parseCommand (Msg cmd path dat)
         Just dat' -> Right $! Store path dat'
   | cmd == "view"  = Right $ View path
   | otherwise      = Left "e0004" -- "error: couldnt parse command"
-
--- Responds to a connection with a message
-respond :: WS.Connection -> T.Text -> IO ()
-respond c t = WS.sendTextData c t
-
--- Decode a proper json msg into native haskell data type
-decodeMsg :: T.Text -> Maybe Msg
-decodeMsg = decodeStrict . T.encodeUtf8
 
 -- Apply the command to the server state and receive an output
 apply :: ServerState -> Command -> IO ServerOut
@@ -88,21 +78,4 @@ apply state (View path) = do
       myData <- findData path
       return $! myData
     else return $! ViewData path (_data $! fromJust reqData)
-
--- Find file data on the harddisk if its not in cache
-findData :: FilePath -> IO ServerOut
-findData path = do
-  let myPath = serverRoot </> path
-  fileExistence <- doesFileExist myPath
-  if fileExistence
-    then do
-      myData <- T.readFile $ serverRoot </> path
-      return $! ViewData path myData
-    else
-      return $! ErrorMsg "e0001" -- "error: file does not exist"
-  
-writeData :: FilePath -> T.Text -> IO ()
-writeData path dat = do
-  let myPath = serverRoot </> path
-  undefined
 

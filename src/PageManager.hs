@@ -1,6 +1,7 @@
 module PageManager where
 import Types
 import Config
+import Helpers
 
 import qualified Data.Text as T
 import qualified Data.HashMap.Strict as HM
