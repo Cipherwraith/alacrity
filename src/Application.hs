@@ -38,9 +38,16 @@ converse state conn = do
       report conn result
 
 report :: WS.Connection -> ServerOut -> IO ()
-report conn serverOut = do
+report conn serverOut@(ViewData _ _) = do
   let output = prepByteString $ encode serverOut
   respond conn output
+report conn serverOut@(ErrorMsg _) = do
+  let output = prepByteString $ encode serverOut
+  respond conn output
+report conn serverOut@(DataSaved _) = do
+  let output = prepByteString $ encode serverOut
+  respond conn output
+report conn (ViewRawData _ output)   = respond conn output
 
 parseMsg :: T.Text -> Either ErrorText Command
 parseMsg msg = case decodeMsg msg of
@@ -49,12 +56,13 @@ parseMsg msg = case decodeMsg msg of
 
 parseCommand :: Msg -> Either ErrorText Command
 parseCommand (Msg cmd path dat) 
-  | cmd == "store" = 
+  | cmd == "store"    = 
       case dat of
         Nothing   -> Left "e0003" -- "error: no data received"
         Just dat' -> Right $! Store path dat'
-  | cmd == "view"  = Right $ View path
-  | otherwise      = Left "e0004" -- "error: couldnt parse command"
+  | cmd == "view"     = Right $ View path
+  | cmd == "viewraw"  = Right $ ViewRaw path
+  | otherwise         = Left "e0004" -- "error: couldnt parse command"
 
 -- Apply the command to the server state and receive an output
 apply :: ServerState -> Command -> IO ServerOut
@@ -81,6 +89,19 @@ apply state (View path) = do
       -- reset cache timeout
       resetCacheTimeout state path
       return $! ViewData path (_pageData $! fromJust reqData)
+
+-- View raw data from the state. Check on harddisk if not in state
+apply state (ViewRaw path) = do
+  currState <- readTVarIO state
+  let reqData = HM.lookup path $! _pages currState
+  if isNothing reqData
+    then do
+      myData <- findData path
+      addDataToState state path myData
+    else do
+      -- reset cache timeout
+      resetCacheTimeout state path
+      return $! ViewRawData path (_pageData $! fromJust reqData)
 
 resetCacheTimeout :: ServerState -> FilePath -> IO ()
 resetCacheTimeout state fp = do

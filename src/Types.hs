@@ -32,7 +32,7 @@ type FileData = T.Text
 type ErrorText = String
 
 -- Server Output
-data ServerOut = ErrorMsg String | DataSaved String | ViewData FilePath T.Text
+data ServerOut = ErrorMsg String | DataSaved String | ViewData FilePath T.Text | ViewRawData FilePath T.Text
 
 instance ToJSON ServerOut where
   toJSON (ErrorMsg  errorMessage) = 
@@ -44,8 +44,10 @@ instance ToJSON ServerOut where
   toJSON (ViewData fileName contents) = 
     object ["view" .= contents, "file" .= fileName]
 
+  toJSON (ViewRawData _ contents) = String contents
+
 -- Command list
-data Command = Store FilePath T.Text | View FilePath
+data Command = Store FilePath T.Text | View FilePath | ViewRaw FilePath
 
 data Msg = Msg {
     _command :: String
