@@ -20,6 +20,7 @@ import Config
 import System.Directory (doesFileExist)
 import Helpers
 import Data.Either
+import Apply
 
 application :: ServerState -> WS.ServerApp
 application state pending = do
@@ -65,64 +66,64 @@ parseCommand (Msg cmd path dat)
   | otherwise         = Left "e0004" -- "error: couldnt parse command"
 
 -- Apply the command to the server state and receive an output
-apply :: ServerState -> Command -> IO ServerOut
+--apply :: ServerState -> Command -> IO ServerOut
+--
+---- Store data in the state
+--apply state (Store path dat) = do
+--  atomically $ do
+--    currState <- readTVar state
+--    let newPage      = Page path dat deathCounter False
+--        updatedPages = HM.insert path newPage (_pages currState)
+--    modifyTVar' state $ \s -> 
+--      set pages updatedPages s
+--  return $! DataSaved path
+--
+---- View data from the state. Check on harddisk if not in state
+--apply state (View path) = do
+--  currState <- readTVarIO state
+--  let reqData = HM.lookup path $! _pages currState
+--  if isNothing reqData
+--    then do
+--      myData <- findData path
+--      addDataToState state path myData
+--    else do
+--      -- reset cache timeout
+--      resetCacheTimeout state path
+--      return $! ViewData path (_pageData $! fromJust reqData)
+--
+---- View raw data from the state. Check on harddisk if not in state
+--apply state (ViewRaw path) = do
+--  currState <- readTVarIO state
+--  let reqData = HM.lookup path $! _pages currState
+--  if isNothing reqData
+--    then do
+--      myData <- findData path
+--      addDataToState state path myData
+--    else do
+--      -- reset cache timeout
+--      resetCacheTimeout state path
+--      return $! ViewRawData path (_pageData $! fromJust reqData)
+--
+--resetCacheTimeout :: ServerState -> FilePath -> IO ()
+--resetCacheTimeout state fp = do
+--  atomically $ do
+--    cState <- readTVar state
+--    let updatedPages = HM.adjust resetTimeout fp (view pages cState)
+--    modifyTVar' state $ \s -> do
+--      set pages updatedPages s
+--
+--resetTimeout :: Page -> Page
+--resetTimeout p = set timeToDie deathCounter p
 
--- Store data in the state
-apply state (Store path dat) = do
-  atomically $ do
-    currState <- readTVar state
-    let newPage      = Page path dat deathCounter False
-        updatedPages = HM.insert path newPage (_pages currState)
-    modifyTVar' state $ \s -> 
-      set pages updatedPages s
-  return $! DataSaved path
-
--- View data from the state. Check on harddisk if not in state
-apply state (View path) = do
-  currState <- readTVarIO state
-  let reqData = HM.lookup path $! _pages currState
-  if isNothing reqData
-    then do
-      myData <- findData path
-      addDataToState state path myData
-    else do
-      -- reset cache timeout
-      resetCacheTimeout state path
-      return $! ViewData path (_pageData $! fromJust reqData)
-
--- View raw data from the state. Check on harddisk if not in state
-apply state (ViewRaw path) = do
-  currState <- readTVarIO state
-  let reqData = HM.lookup path $! _pages currState
-  if isNothing reqData
-    then do
-      myData <- findData path
-      addDataToState state path myData
-    else do
-      -- reset cache timeout
-      resetCacheTimeout state path
-      return $! ViewRawData path (_pageData $! fromJust reqData)
-
-resetCacheTimeout :: ServerState -> FilePath -> IO ()
-resetCacheTimeout state fp = do
-  atomically $ do
-    cState <- readTVar state
-    let updatedPages = HM.adjust resetTimeout fp (view pages cState)
-    modifyTVar' state $ \s -> do
-      set pages updatedPages s
-
-resetTimeout :: Page -> Page
-resetTimeout p = set timeToDie deathCounter p
-
-addDataToState :: ServerState -> FilePath -> Either ErrorText FileData -> IO ServerOut
-addDataToState _ _ (Left err) = return $ ErrorMsg err
-addDataToState state path (Right dat) = do
-  atomically $ do
-    cState <- readTVar state
-    let newPage      = Page path dat deathCounter True
-        updatedPages = HM.insert path newPage (_pages cState)
-    modifyTVar' state $ \s ->
-      set pages updatedPages s
-    return $! ViewData path dat
-  
-
+--addDataToState :: ServerState -> FilePath -> Either ErrorText FileData -> IO ServerOut
+--addDataToState _ _ (Left err) = return $ ErrorMsg err
+--addDataToState state path (Right dat) = do
+--  atomically $ do
+--    cState <- readTVar state
+--    let newPage      = Page path dat deathCounter True
+--        updatedPages = HM.insert path newPage (_pages cState)
+--    modifyTVar' state $ \s ->
+--      set pages updatedPages s
+--    return $! ViewData path dat
+--  
+--

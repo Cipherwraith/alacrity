@@ -6,6 +6,7 @@ import qualified Data.ByteString.Lazy as BL
 import Config
 import Types
 import System.FilePath.Posix
+import Development.Shake.FilePath
 --import qualified System.Path.Directory as Dir
 --import qualified System.Path.IO as PathIO
 --import qualified System.Path as Path
@@ -14,10 +15,16 @@ import System.Directory
 import qualified Network.WebSockets as WS
 import Data.Aeson ((.:), (.=), (.:?), decode, encode, ToJSON(..), object, FromJSON(..), Value(..), decodeStrict)
 import Data.Monoid
+import Control.Lens
+import Control.Concurrent
+import Control.Concurrent.STM
+import Control.Concurrent.STM.TVar
+import qualified Data.HashMap.Strict as HM
 
 
 makePath :: FilePath -> FilePath
-makePath fp = makeValid . normalise $! serverRoot <> fp
+makePath fp = makeValid . normalise . (<>) (serverRoot <> "/") . mconcat . filter (not . (==) "../") . splitPath $! fp
+--makePath fp = makeValid . normalise $! serverRoot <> fp
 
 -- Write data to harddisk from cache
 writeData :: FilePath -> T.Text -> IO ()
@@ -48,3 +55,25 @@ respond = WS.sendTextData
 -- Decode a proper json msg into native haskell data type
 decodeMsg :: T.Text -> Maybe Msg
 decodeMsg = decodeStrict . T.encodeUtf8
+
+addDataToState :: ServerState -> FilePath -> Either ErrorText FileData -> IO ServerOut
+addDataToState _ _ (Left err) = return $ ErrorMsg err
+addDataToState state path (Right dat) = do
+  atomically $ do
+    cState <- readTVar state
+    let newPage      = Page path dat deathCounter True
+        updatedPages = HM.insert path newPage (_pages cState)
+    modifyTVar' state $ \s ->
+      set pages updatedPages s
+    return $! ViewData path dat
+
+resetCacheTimeout :: ServerState -> FilePath -> IO ()
+resetCacheTimeout state fp = do
+  atomically $ do
+    cState <- readTVar state
+    let updatedPages = HM.adjust resetTimeout fp (view pages cState)
+    modifyTVar' state $ \s -> do
+      set pages updatedPages s
+
+resetTimeout :: Page -> Page
+resetTimeout p = set timeToDie deathCounter p
