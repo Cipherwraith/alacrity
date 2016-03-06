@@ -41,7 +41,7 @@ apply state (View path) = do
   if isNothing reqData
     then do
       myData <- findData path
-      addDataToState state path myData
+      addDataToState state WellDone path myData
     else do
       -- reset cache timeout
       resetCacheTimeout state path
@@ -54,7 +54,7 @@ apply state (ViewRaw path) = do
   if isNothing reqData
     then do
       myData <- findData path
-      addDataToState state path myData
+      addDataToState state Raw path myData
     else do
       -- reset cache timeout
       resetCacheTimeout state path

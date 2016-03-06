@@ -14,6 +14,6 @@ serverPort = 1001
 deathCounter :: Int
 deathCounter = 10
 
--- server root
+-- server document root
 serverRoot :: FilePath 
 serverRoot = "/home/alacrity/files"

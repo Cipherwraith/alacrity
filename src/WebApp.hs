@@ -27,6 +27,5 @@ serveRoutes !state = do
     let path = T.unpack . T.intercalate "/" . pathInfo $ req
         cmd = ViewRaw path
     result <- liftIO $! state `apply` cmd
-    let prepped = prepByteString . encode $! result
+    let prepped = rawData result
     html . TL.fromStrict $! prepped
-  

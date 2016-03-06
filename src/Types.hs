@@ -34,6 +34,8 @@ type ErrorText = String
 -- Server Output
 data ServerOut = ErrorMsg String | DataSaved String | ViewData FilePath T.Text | ViewRawData FilePath T.Text
 
+data Rawness = Raw | WellDone
+
 instance ToJSON ServerOut where
   toJSON (ErrorMsg  errorMessage) = 
     object ["error" .= errorMessage]
