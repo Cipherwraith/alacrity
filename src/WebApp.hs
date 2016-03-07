@@ -23,7 +23,9 @@ serveWeb port state = scotty port $! do
 
 serveRoutes :: ServerState -> ScottyM ()
 serveRoutes !state = do
-  notFound $! do
+
+  -- Matches any GET request and sends to alacrity backend
+  get (function undefined) $! do
     req <- request
     let path = T.unpack . T.intercalate "/" . pathInfo $ req
         cmd = ViewRaw path
@@ -31,10 +33,16 @@ serveRoutes !state = do
     result <- liftIO $! state `apply` cmd
     let prepped = rawData result
     outputResult ext prepped
-    
+
+  -- 404 Not found. Matches all non `GET`
+  notFound $! text "[ Alacrity ] 404: Not Found"
+
+-- Takes the output data and outputs it with the appropriate content-type
 outputResult :: String -> T.Text -> ActionM ()
 outputResult ext dat =
   case ext of
     ".html" -> html . TL.fromStrict $! dat
     ".json" -> json . TL.fromStrict $! dat
     _       -> text . TL.fromStrict $! dat
+
+
