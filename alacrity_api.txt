@@ -20,14 +20,14 @@ This is a list of commands Alacrity currently have
 Command: Store data
 The "store" command is sent together with path and data fields. Data will be stored in the path provided.
 Syntax: "store"
-Path field: "path/to/file"
+Path field: "/path/to/file"
 Data filed: "any utf8 text data"
 Example: {"command":"store", "path":"/path/to/file", "data":"any utf8 text data"}
 
 Command: View data
 The "view" command is sent together with path field, it ignores the data field being sent. Data will be returned using the path provided.
 Syntax: "view"
-Path field: "path/to/file"
+Path field: "/path/to/file"
 Data field: "any utf8 text data"
 Example: {"command":"view", "path":"/path/to/file", "data":"any utf8 text data"}
 
