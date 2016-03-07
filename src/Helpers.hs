@@ -20,6 +20,7 @@ import Control.Concurrent
 import Control.Concurrent.STM
 import Control.Concurrent.STM.TVar
 import qualified Data.HashMap.Strict as HM
+import Network.HTTP.Types.Status
 
 
 makePath :: FilePath -> FilePath
@@ -69,7 +70,6 @@ addDataToState state rawness path (Right dat) = do
       Raw      -> return $! ViewRawData path dat
       WellDone -> return $! ViewData    path dat
     
-
 resetCacheTimeout :: ServerState -> FilePath -> IO ()
 resetCacheTimeout state fp = do
   atomically $ do
@@ -81,8 +81,15 @@ resetCacheTimeout state fp = do
 resetTimeout :: Page -> Page
 resetTimeout p = set timeToDie deathCounter p
 
-rawData :: ServerOut -> T.Text
-rawData (ErrorMsg s) = T.pack s
-rawData (DataSaved s) = T.pack s
-rawData (ViewData _ s) = s
-rawData (ViewRawData _ s) = s
+rawData :: ServerOut -> (T.Text, Status)
+rawData (ErrorMsg s) = case s of
+  "e0001" -> (T.pack s, notFound404)
+  "e0002" -> (T.pack s, badRequest400)
+  "e0003" -> (T.pack s, unprocessable422)
+  "e0004" -> (T.pack s, notImplemented501)
+rawData (DataSaved s) = (T.pack s, created201)
+rawData (ViewData _ s) = (s, ok200)
+rawData (ViewRawData _ s) = (s, ok200)
+
+unprocessable422 :: Status
+unprocessable422 = mkStatus 422 "Unprocessable Entity"

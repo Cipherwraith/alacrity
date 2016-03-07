@@ -15,6 +15,7 @@ import Apply
 import Helpers
 import Data.Aeson ((.:), (.=), (.:?), decode, encode, ToJSON(..), object, FromJSON(..), Value(..), decodeStrict)
 import System.FilePath.Posix
+import Network.HTTP.Types.Status
 
 serveWeb :: Int -> ServerState -> IO ()
 serveWeb port state = scotty port $! do
@@ -25,7 +26,7 @@ serveRoutes :: ServerState -> ScottyM ()
 serveRoutes !state = do
 
   -- Matches any GET request and sends to alacrity backend
-  get (function undefined) $! do
+  get (function $ \req -> Just [("foo","bar")]) $! do
     req <- request
     let path = T.unpack . T.intercalate "/" . pathInfo $ req
         cmd = ViewRaw path
@@ -38,11 +39,16 @@ serveRoutes !state = do
   notFound $! text "[ Alacrity ] 404: Not Found"
 
 -- Takes the output data and outputs it with the appropriate content-type
-outputResult :: String -> T.Text -> ActionM ()
-outputResult ext dat =
-  case ext of
-    ".html" -> html . TL.fromStrict $! dat
-    ".json" -> json . TL.fromStrict $! dat
-    _       -> text . TL.fromStrict $! dat
+outputResult :: String -> (T.Text, Status) -> ActionM ()
+outputResult ext (dat, httpStatus) = outResult httpStatus dat $! 
+    case ext of
+      ".html" -> html
+      ".json" -> json
+      _       -> text
 
+-- Outputs the result using the specified http status code and content type
+outResult :: Status -> T.Text -> (TL.Text -> ActionM ()) -> ActionM ()
+outResult s d o = do
+  status s
+  o . TL.fromStrict $! d
 
