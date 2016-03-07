@@ -14,6 +14,7 @@ import Control.Monad.IO.Class (liftIO)
 import Apply
 import Helpers
 import Data.Aeson ((.:), (.=), (.:?), decode, encode, ToJSON(..), object, FromJSON(..), Value(..), decodeStrict)
+import System.FilePath.Posix
 
 serveWeb :: Int -> ServerState -> IO ()
 serveWeb port state = scotty port $! do
@@ -26,6 +27,14 @@ serveRoutes !state = do
     req <- request
     let path = T.unpack . T.intercalate "/" . pathInfo $ req
         cmd = ViewRaw path
+        ext = takeExtension path
     result <- liftIO $! state `apply` cmd
     let prepped = rawData result
-    html . TL.fromStrict $! prepped
+    outputResult ext prepped
+    
+outputResult :: String -> T.Text -> ActionM ()
+outputResult ext dat =
+  case ext of
+    ".html" -> html . TL.fromStrict $! dat
+    ".json" -> json . TL.fromStrict $! dat
+    _       -> text . TL.fromStrict $! dat
