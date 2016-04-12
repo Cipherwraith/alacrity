@@ -16,4 +16,4 @@ deathCounter = 10
 
 -- server document root
 serverRoot :: FilePath 
-serverRoot = "/home/alacrity/files"
+serverRoot = "/srv/http"
