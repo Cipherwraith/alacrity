@@ -21,7 +21,7 @@ executable alacrity
                      , BangPatterns
                      , DeriveGeneric
                      , TemplateHaskell
-  ghc-options:     -Wall
+  ghc-options:     -threaded -O2 -funfolding-use-threshold=16 -fexcess-precision -optc-O3 -optc-ffast-math -rtsopts -fno-state-hack -fstatic-argument-transformation -funbox-strict-fields -feager-blackholing -fno-strictness
   -- other-modules:       
   -- other-extensions:    
   build-depends:       base >=4.7 && <4.8
