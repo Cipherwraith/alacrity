@@ -30,7 +30,7 @@ makePath :: IndexSettings -> FilePath -> FilePath
 makePath (IndexSettings False _ ) fp = rakedPath fp
 makePath (IndexSettings True indexAss ) fp 
   | fp == ""                = rakedPath indexAss
-  | (takeFileName fp) == "" = rakedPath indexAss
+  | (takeFileName fp) == "" = rakedPath (fp <> indexAss)
   | otherwise               = rakedPath fp
 
 -- Function that builds the absolute path, taking into account the server root
