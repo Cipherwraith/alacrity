@@ -47,6 +47,16 @@ outputResult ext (dat, httpStatus) = outResult httpStatus dat $!
       ".html" -> customOut HTML
       ".json" -> customOut JSON
       ".css"  -> customOut CSS
+      ".jpg"  -> customOut JPG
+      ".gif"  -> customOut GIF
+      ".mp4"  -> customOut MP4
+      ".ogg"  -> customOut OGG
+      ".ico"  -> customOut ICO
+      ".svg"  -> customOut SVG
+      ".png"  -> customOut PNG
+      ".pdf"  -> customOut PDF
+      ".jpeg" -> customOut JPEG
+      ".webm" -> customOut WEBM
       ".js"   -> customOut JS
       ".txt"  -> customOut TXT
       _       -> customOut Unsupported
@@ -61,6 +71,16 @@ customOut cout pFile = do
     HTML        -> setContentType "text/html; charset=utf-8"
     JSON        -> setContentType "application/json; charset=utf-8"
     CSS         -> setContentType "text/css; charset=utf-8"
+    GIF         -> setContentType "image/gif"
+    SVG         -> setContentType "image/svg+xml"
+    ICO         -> setContentType "image/x-icon"
+    JPG         -> setContentType "image/jpeg"
+    MP4         -> setContentType "video/mp4"
+    OGG         -> setContentType "audio/ogg"
+    PNG         -> setContentType "image/png"
+    PDF         -> setContentType "application/pdf"
+    JPEG        -> setContentType "image/jpeg"
+    WEBM        -> setContentType "video/webm"
     JS          -> setContentType "text/javascript; charset=utf-8"
     TXT         -> setContentType "text/plain; charset=utf-8"
     Unsupported -> setContentType "application/octet-stream"

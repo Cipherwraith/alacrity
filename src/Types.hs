@@ -79,9 +79,8 @@ data Msg = Msg {
   , _filedata :: Maybe T.Text
 }
 
--- Support for file types
---    jpg webm gif jpeg php png ico svg 
-data CustomOut = HTML | JSON | CSS | JS | TXT | Unsupported
+-- Support for mime types
+data CustomOut = PDF | OGG | MP4 | SVG | ICO | PNG | GIF | WEBM | HTML | JSON | JPG | JPEG | CSS | JS | TXT | Unsupported
 
 -- Support for binary or utf-8 text files
 data FileEncoding = UTF8 | Binary deriving (Eq, Ord)
