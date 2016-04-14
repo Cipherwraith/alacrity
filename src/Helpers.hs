@@ -23,21 +23,24 @@ import qualified Data.HashMap.Strict as HM
 import Network.HTTP.Types.Status
 
 
-makePath :: FilePath -> FilePath
-makePath fp = makeValid . normalise . (<>) (serverRoot <> "/") . mconcat . filter (not . (==) "../") . splitPath $! fp
---makePath fp = makeValid . normalise $! serverRoot <> fp
+makePath :: IndexSettings -> FilePath -> FilePath
+makePath (IndexSettings False _ ) fp = makeValid . normalise . (<>) (serverRoot <> "/") . mconcat . filter (not . (==) "../") . splitPath $! fp
+makePath (IndexSettings True indexAss ) fp = 
+  if fp == "" 
+    then makeValid . normalise . (<>) (serverRoot <> "/") . mconcat . filter (not . (==) "../") . splitPath $! indexAss
+    else makeValid . normalise . (<>) (serverRoot <> "/") . mconcat . filter (not . (==) "../") . splitPath $! fp
 
 -- Write data to harddisk from cache
 writeData :: FilePath -> T.Text -> IO ()
 writeData path dat = do
-  let myPath = makePath path
+  let myPath = makePath indexSettings path
   createDirectoryIfMissing True $! takeDirectory myPath
   T.writeFile myPath dat
 
 -- Find file data on the harddisk if its not in cache
 findData :: FilePath -> IO (Either ErrorText FileData)
 findData path = do
-  let myPath = makePath path
+  let myPath = makePath indexSettings path
   fileExistence <- doesFileExist myPath
   if fileExistence
     then do
