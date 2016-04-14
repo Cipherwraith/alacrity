@@ -1,4 +1,5 @@
 module WebApp where
+import Config
 import Types
 import Web.Scotty
 import Network.Wai.Middleware.RequestLogger
@@ -30,7 +31,7 @@ serveRoutes !state = do
     req <- request
     let path = T.unpack . T.intercalate "/" . pathInfo $ req
         cmd = ViewRaw path
-        ext = takeExtension path
+        ext = takeExtension $! makePath indexSettings path
     result <- liftIO $! state `apply` cmd
     let prepped = rawData result
     outputResult ext prepped
@@ -44,7 +45,19 @@ outputResult ext (dat, httpStatus) = outResult httpStatus dat $!
     case ext of
       ".html" -> html
       ".json" -> json
+      ".css"  -> customOut CSS
+      ".js"   -> customOut JS
       _       -> text
+
+customOut :: CustomOut -> TL.Text -> ActionM ()
+customOut CSS t = do
+  setHeader "Content-Type" "text/css; charset=utf-8"
+  text t
+
+customOut JS t = do
+  setHeader "Content-Type" "text/css; charset=utf-8"
+  text t
+
 
 -- Outputs the result using the specified http status code and content type
 outResult :: Status -> T.Text -> (TL.Text -> ActionM ()) -> ActionM ()
