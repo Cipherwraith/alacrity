@@ -62,7 +62,7 @@ prepByteString = T.decodeUtf8 . BL.toStrict
 
 -- Responds to a connection with a message
 respond :: WS.WebSocketsData a => WS.Connection -> a -> IO ()
-respond = WS.sendBinaryData
+respond = WS.sendTextData
 
 -- Decode a proper json msg into native haskell data type
 decodeMsg :: T.Text -> Maybe Msg
