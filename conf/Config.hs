@@ -1,6 +1,7 @@
 module Config where
 --import System.FilePath.Posix
 --import Data.Monoid
+import Types
 
 -- One second in microseconds
 interval :: Int
@@ -17,3 +18,7 @@ deathCounter = 10
 -- server document root
 serverRoot :: FilePath 
 serverRoot = "/srv/http"
+
+-- look at `Types.hs` for more info about this setting
+indexSettings :: IndexSettings
+indexSettings = IndexSettings True "index.html"
