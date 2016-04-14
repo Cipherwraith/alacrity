@@ -49,7 +49,7 @@ instance ToJSON ServerOut where
   toJSON (ViewRawData _ contents) = String contents
 
 -- Command list
-data Command = Store FilePath T.Text | View FilePath | ViewRaw FilePath
+data Command = Store FilePath T.Text | View FilePath | ViewRaw FilePath 
 
 data Msg = Msg {
     _command :: String

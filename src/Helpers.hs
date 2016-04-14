@@ -43,7 +43,7 @@ findData path = do
     then do
       myData <- T.readFile myPath
       return $! Right myData
-    else
+    else 
       return $! Left "e0001" -- "error: file does not exist"
 
 prepByteString :: BL.ByteString -> T.Text
