@@ -5,12 +5,13 @@ This is a basic guide on how to use Alacrity. Each request to alacrity requires 
 {
 	"command" : "command_syntax_here",
 	"path" : "/path/to/file",
-	"data" : "any_utf8_text_data"
+	"data" : "any_base64_encoded_data"
 }
 
 The "command" value is for alacrity command
 The "path" value is the path where data will be stored and where data can be accessed
-The "data" value is the data that will be stored in the path specified
+The "data" value is the data that will be stored in the path specified. This must be base64 encoded
+The file's mimetype will be determined by the file extension extracted from the path 
 
 
 ALACRITY COMMANDS
@@ -19,17 +20,19 @@ This is a list of commands Alacrity currently have
 
 Command: Store data
 The "store" command is sent together with path and data fields. Data will be stored in the path provided.
+The file's mimetype will be determined by the file extension given in the path
 Syntax: "store"
 Path field: "/path/to/file"
-Data filed: "any utf8 text data"
-Example: {"command":"store", "path":"/path/to/file", "data":"any utf8 text data"}
+Data filed: "any base64 encoded data"
+Example: {"command":"store", "path":"/path/to/file", "data":"any base64 encoded data"}
 
 Command: View data
 The "view" command is sent together with path field, it ignores the data field being sent. Data will be returned using the path provided.
+All view data will be base64 encoded. You can assume the file mime type based on file extension, but its not guaranteed.
 Syntax: "view"
 Path field: "/path/to/file"
-Data field: "any utf8 text data"
-Example: {"command":"view", "path":"/path/to/file", "data":"any utf8 text data"}
+Data field: "any base64 encoded data"
+Example: {"command":"view", "path":"/path/to/file"}
 
 
 ALACRITY RESPONSE
@@ -38,7 +41,7 @@ Success store
 {"saved" : "/path/to/file"}
 
 Success view
-{"view" : "utf8 text data", "file" : "/path/to/file"}
+{"view" : "base64 encoded data", "file" : "/path/to/file"}
 
 Error
 {"error" : "error code"}
