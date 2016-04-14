@@ -40,13 +40,13 @@ converse state conn = do
 
 report :: WS.Connection -> ServerOut -> IO ()
 report conn serverOut@(ViewData _ _) = do
-  let output = prepByteString $ encode serverOut
+  let output = encode serverOut
   respond conn output
 report conn serverOut@(ErrorMsg _) = do
-  let output = prepByteString $ encode serverOut
+  let output = encode serverOut
   respond conn output
 report conn serverOut@(DataSaved _) = do
-  let output = prepByteString $ encode serverOut
+  let output = encode serverOut
   respond conn output
 report conn (ViewRawData _ output)   = respond conn output
 
@@ -60,7 +60,7 @@ parseCommand (Msg cmd path dat)
   | cmd == "store"    = 
       case dat of
         Nothing   -> Left "e0003" -- "error: no data received"
-        Just dat' -> Right $! Store path dat'
+        Just dat' -> Right $! Store path (base64ToBinary dat')
   | cmd == "view"     = Right $ View path
   | cmd == "viewraw"  = Right $ ViewRaw path
   | otherwise         = Left "e0004" -- "error: couldnt parse command"

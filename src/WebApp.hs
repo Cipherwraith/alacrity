@@ -10,6 +10,7 @@ import qualified Data.Text.IO as T
 import qualified Data.Text.Encoding as T
 import qualified Data.Text.Lazy as TL
 import qualified Data.ByteString.Lazy as BL
+import qualified Data.ByteString as B
 import Control.Monad
 import Control.Monad.IO.Class (liftIO)
 import Apply
@@ -40,28 +41,38 @@ serveRoutes !state = do
   notFound $! text "[ Alacrity ] 404: Not Found"
 
 -- Takes the output data and outputs it with the appropriate content-type
-outputResult :: String -> (T.Text, Status) -> ActionM ()
+outputResult :: String -> (B.ByteString, Status) -> ActionM ()
 outputResult ext (dat, httpStatus) = outResult httpStatus dat $! 
     case ext of
-      ".html" -> html
-      ".json" -> json
+      ".html" -> customOut HTML
+      ".json" -> customOut JSON
       ".css"  -> customOut CSS
       ".js"   -> customOut JS
-      _       -> text
+      ".txt"  -> customOut TXT
+      _       -> customOut Unsupported
 
-customOut :: CustomOut -> TL.Text -> ActionM ()
-customOut CSS t = do
-  setHeader "Content-Type" "text/css; charset=utf-8"
-  text t
+-- Manages the output content type and binary/text implementations
+--  Natively supported file types: 
+--    txt jpg webm html json gif jpeg php png ico svg css js
+--        (defaults to octet-stream for non-supported file types)
+customOut :: CustomOut -> BL.ByteString -> ActionM ()
+customOut cout pFile = do
+  case cout of
+    HTML        -> setContentType "text/html; charset=utf-8"
+    JSON        -> setContentType "application/json; charset=utf-8"
+    CSS         -> setContentType "text/css; charset=utf-8"
+    JS          -> setContentType "text/javascript; charset=utf-8"
+    TXT         -> setContentType "text/plain; charset=utf-8"
+    Unsupported -> setContentType "application/octet-stream"
+  raw pFile
 
-customOut JS t = do
-  setHeader "Content-Type" "text/css; charset=utf-8"
-  text t
-
+-- Set the content type of the output
+setContentType :: TL.Text -> ActionM()
+setContentType s = setHeader "Content-Type" s
 
 -- Outputs the result using the specified http status code and content type
-outResult :: Status -> T.Text -> (TL.Text -> ActionM ()) -> ActionM ()
+outResult :: Status -> B.ByteString -> (BL.ByteString -> ActionM ()) -> ActionM ()
 outResult s d o = do
   status s
-  o . TL.fromStrict $! d
+  o . BL.fromStrict $! d
 

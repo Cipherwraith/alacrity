@@ -1,12 +1,17 @@
 module Types where
+import qualified Data.ByteString.Base64 as B64
+import qualified Data.ByteString as B hiding (unpack, pack)
+import qualified Data.ByteString.Char8 as B (unpack, pack)
 import Control.Lens hiding ((.=))
 import qualified Data.Text as T
-import qualified Data.ByteString as B
 import qualified Data.HashMap.Strict as HM
 import Data.Aeson ((.:), (.=), (.:?), decode, encode, ToJSON(..), object, FromJSON(..), Value(..))
 import Control.Applicative ((<$>), (<*>))
 import Control.Concurrent.STM
 import Control.Concurrent.STM.TVar
+import qualified Data.Text.Lazy as TL
+import qualified Data.ByteString.Lazy as BL
+--import Helpers
 
 -- Empty state for initializing the server
 newState :: State
@@ -17,7 +22,7 @@ type ServerState = TVar State
 -- Data about our page stored in memory
 data Page = Page { 
     _pagePath   :: FilePath -- Path where the file is stored
-  , _pageData   :: FileData -- Data stored in the file; UTF8 format
+  , _pageData   :: FileData -- Data stored in the file
   , _timeToDie  :: Int      -- Seconds until the data is removed from State cache
   , _onHarddisk :: Bool     -- Whether or not this page has been saved to hard disk
   } deriving (Show)
@@ -28,11 +33,11 @@ data State = State {
   } deriving (Show)
 
 -- Input data
-type FileData = T.Text
+type FileData = B.ByteString
 type ErrorText = String
 
 -- Server Output
-data ServerOut = ErrorMsg String | DataSaved String | ViewData FilePath T.Text | ViewRawData FilePath T.Text
+data ServerOut = ErrorMsg String | DataSaved String | ViewData FilePath B.ByteString | ViewRawData FilePath B.ByteString
 
 data Rawness = Raw | WellDone
 
@@ -44,12 +49,18 @@ instance ToJSON ServerOut where
     object ["saved" .= fileName]
 
   toJSON (ViewData fileName contents) = 
-    object ["view" .= contents, "file" .= fileName]
+    object ["view" .= (binaryToBase64 contents), "file" .= fileName]
 
-  toJSON (ViewRawData _ contents) = String contents
+  toJSON (ViewRawData _ contents) = String . binaryToBase64 $ contents
+
+binaryToBase64 :: B.ByteString -> T.Text
+binaryToBase64 b = T.pack . B.unpack . B64.encode $ b
+
+base64ToBinary :: T.Text -> B.ByteString
+base64ToBinary t = B64.decodeLenient . B.pack . T.unpack $ t
 
 -- Command list
-data Command = Store FilePath T.Text | View FilePath | ViewRaw FilePath 
+data Command = Store FilePath B.ByteString | View FilePath | ViewRaw FilePath 
 
 -- Settings for index assumption
 --   if _assumeIndex is true, then we will assume that 
@@ -68,8 +79,17 @@ data Msg = Msg {
   , _filedata :: Maybe T.Text
 }
 
--- Support for .css and .js files
-data CustomOut = CSS | JS
+-- Support for file types
+--    jpg webm gif jpeg php png ico svg 
+data CustomOut = HTML | JSON | CSS | JS | TXT | Unsupported
+
+-- Support for binary or utf-8 text files
+data FileEncoding = UTF8 | Binary deriving (Eq, Ord)
+
+data PreppedFile = PreppedFile {
+    _getText   :: Maybe TL.Text
+  , _getBinary :: Maybe BL.ByteString
+} 
 
 instance FromJSON Msg where
   parseJSON (Object v) = 

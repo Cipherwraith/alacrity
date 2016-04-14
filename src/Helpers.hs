@@ -1,4 +1,7 @@
 module Helpers where
+import qualified Data.ByteString.Base64 as B64
+import qualified Data.ByteString as B hiding (unpack, pack)
+import qualified Data.ByteString.Char8 as B (unpack, pack)
 import qualified Data.Text as T
 import qualified Data.Text.IO as T
 import qualified Data.Text.Encoding as T
@@ -31,11 +34,11 @@ makePath (IndexSettings True indexAss ) fp =
     else makeValid . normalise . (<>) (serverRoot <> "/") . mconcat . filter (not . (==) "../") . splitPath $! fp
 
 -- Write data to harddisk from cache
-writeData :: FilePath -> T.Text -> IO ()
+writeData :: FilePath -> B.ByteString -> IO ()
 writeData path dat = do
   let myPath = makePath indexSettings path
   createDirectoryIfMissing True $! takeDirectory myPath
-  T.writeFile myPath dat
+  B.writeFile myPath dat
 
 -- Find file data on the harddisk if its not in cache
 findData :: FilePath -> IO (Either ErrorText FileData)
@@ -44,7 +47,7 @@ findData path = do
   fileExistence <- doesFileExist myPath
   if fileExistence
     then do
-      myData <- T.readFile myPath
+      myData <- B.readFile myPath
       return $! Right myData
     else 
       return $! Left "e0001" -- "error: file does not exist"
@@ -53,8 +56,8 @@ prepByteString :: BL.ByteString -> T.Text
 prepByteString = T.decodeUtf8 . BL.toStrict
 
 -- Responds to a connection with a message
-respond :: WS.Connection -> T.Text -> IO ()
-respond = WS.sendTextData 
+respond :: WS.WebSocketsData a => WS.Connection -> a -> IO ()
+respond = WS.sendBinaryData
 
 -- Decode a proper json msg into native haskell data type
 decodeMsg :: T.Text -> Maybe Msg
@@ -72,7 +75,7 @@ addDataToState state rawness path (Right dat) = do
     case rawness of
       Raw      -> return $! ViewRawData path dat
       WellDone -> return $! ViewData    path dat
-    
+
 resetCacheTimeout :: ServerState -> FilePath -> IO ()
 resetCacheTimeout state fp = do
   atomically $ do
@@ -84,15 +87,18 @@ resetCacheTimeout state fp = do
 resetTimeout :: Page -> Page
 resetTimeout p = set timeToDie deathCounter p
 
-rawData :: ServerOut -> (T.Text, Status)
+rawData :: ServerOut -> (B.ByteString, Status)
 rawData (ErrorMsg s) = case s of
-  "e0001" -> (T.pack s, notFound404)
-  "e0002" -> (T.pack s, badRequest400)
-  "e0003" -> (T.pack s, unprocessable422)
-  "e0004" -> (T.pack s, notImplemented501)
-rawData (DataSaved s) = (T.pack s, created201)
+  "e0001" -> (B.pack s, notFound404)
+  "e0002" -> (B.pack s, badRequest400)
+  "e0003" -> (B.pack s, unprocessable422)
+  "e0004" -> (B.pack s, notImplemented501)
+rawData (DataSaved s) = (B.pack s, created201)
 rawData (ViewData _ s) = (s, ok200)
 rawData (ViewRawData _ s) = (s, ok200)
+
+--binaryToBase64 :: B.ByteString -> T.Text
+--binaryToBase64 b = T.pack . B.unpack . B64.encode $ b
 
 unprocessable422 :: Status
 unprocessable422 = mkStatus 422 "Unprocessable Entity"
