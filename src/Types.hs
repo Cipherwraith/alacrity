@@ -51,11 +51,25 @@ instance ToJSON ServerOut where
 -- Command list
 data Command = Store FilePath T.Text | View FilePath | ViewRaw FilePath 
 
+-- Settings for index assumption
+--   if _assumeIndex is true, then we will assume that 
+--      /path/to/file/${_indexAssumption} is the working index page
+--   Index will be assumed if a path is requested without an explicit file name
+--   If _assumeIndex is false, then we wont assume anything. 
+--     note: server will return an error if just a path is requested
+data IndexSettings = IndexSettings {
+    _assumeIndex     :: Bool
+  , _indexAssumption :: FilePath
+} deriving (Show)
+
 data Msg = Msg {
     _command :: String
   , _filepath :: FilePath
   , _filedata :: Maybe T.Text
 }
+
+-- Support for .css and .js files
+data CustomOut = CSS | JS
 
 instance FromJSON Msg where
   parseJSON (Object v) = 
