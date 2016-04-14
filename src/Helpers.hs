@@ -25,13 +25,18 @@ import Control.Concurrent.STM.TVar
 import qualified Data.HashMap.Strict as HM
 import Network.HTTP.Types.Status
 
-
+-- Helper that organizes the absolute path of file
 makePath :: IndexSettings -> FilePath -> FilePath
-makePath (IndexSettings False _ ) fp = makeValid . normalise . (<>) (serverRoot <> "/") . mconcat . filter (not . (==) "../") . splitPath $! fp
-makePath (IndexSettings True indexAss ) fp = 
-  if fp == "" 
-    then makeValid . normalise . (<>) (serverRoot <> "/") . mconcat . filter (not . (==) "../") . splitPath $! indexAss
-    else makeValid . normalise . (<>) (serverRoot <> "/") . mconcat . filter (not . (==) "../") . splitPath $! fp
+makePath (IndexSettings False _ ) fp = rakedPath fp
+makePath (IndexSettings True indexAss ) fp 
+  | fp == ""                = rakedPath indexAss
+  | (takeFileName fp) == "" = rakedPath indexAss
+  | otherwise               = rakedPath fp
+
+-- Function that builds the absolute path, taking into account the server root
+rakedPath :: FilePath -> FilePath
+rakedPath !fp = makeValid . normalise . (<>) (serverRoot <> "/") . mconcat . filter (not . (==) "../") . splitPath $! fp
+
 
 -- Write data to harddisk from cache
 writeData :: FilePath -> B.ByteString -> IO ()
