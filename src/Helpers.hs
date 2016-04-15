@@ -61,8 +61,11 @@ prepByteString :: BL.ByteString -> T.Text
 prepByteString = T.decodeUtf8 . BL.toStrict
 
 -- Responds to a connection with a message
+--   sends a close frame 1000 after sending message; should satisy feof() on client side
 respond :: WS.WebSocketsData a => WS.Connection -> a -> IO ()
-respond = WS.sendTextData
+respond conn dat = do
+  WS.sendTextData conn dat
+  WS.sendClose conn ("BREAK" :: T.Text)
 
 -- Decode a proper json msg into native haskell data type
 decodeMsg :: T.Text -> Maybe Msg

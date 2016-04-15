@@ -39,15 +39,9 @@ converse state conn = do
       report conn result
 
 report :: WS.Connection -> ServerOut -> IO ()
-report conn serverOut@(ViewData _ _) = do
-  let output = encode serverOut
-  respond conn output
-report conn serverOut@(ErrorMsg _) = do
-  let output = encode serverOut
-  respond conn output
-report conn serverOut@(DataSaved _) = do
-  let output = encode serverOut
-  respond conn output
+report conn serverOut@(ViewData _ _) = respond conn $! encode serverOut
+report conn serverOut@(ErrorMsg _)   = respond conn $! encode serverOut
+report conn serverOut@(DataSaved _)  = respond conn $! encode serverOut
 report conn (ViewRawData _ output)   = respond conn output
 
 parseMsg :: T.Text -> Either ErrorText Command
