@@ -3,6 +3,10 @@ module Config where
 --import Data.Monoid
 import Types
 
+-- Password needed for connecting to the websocket interface
+socketPassword :: String
+socketPassword = "any_password"
+
 -- One second in microseconds
 interval :: Int
 interval = 1000000

@@ -75,6 +75,7 @@ data IndexSettings = IndexSettings {
 
 data Msg = Msg {
     _command :: String
+  , _password :: Maybe String
   , _filepath :: FilePath
   , _filedata :: Maybe T.Text
 }
@@ -93,8 +94,9 @@ data PreppedFile = PreppedFile {
 instance FromJSON Msg where
   parseJSON (Object v) = 
     Msg <$>
-    (v .: "command") <*>
-    (v .: "path") <*>
+    (v .:  "command")  <*>
+    (v .:? "password") <*>
+    (v .:  "path")     <*>
     (v .:? "data") 
 
 makeLenses ''State

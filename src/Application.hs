@@ -50,11 +50,14 @@ parseMsg msg = case decodeMsg msg of
   Just cmd -> parseCommand cmd
 
 parseCommand :: Msg -> Either ErrorText Command
-parseCommand (Msg cmd path dat) 
-  | cmd == "store"    = 
-      case dat of
-        Nothing   -> Left "e0003" -- "error: no data received"
-        Just dat' -> Right $! Store path (base64ToBinary dat')
-  | cmd == "view"     = Right $ View path
-  | cmd == "viewraw"  = Right $ ViewRaw path
-  | otherwise         = Left "e0004" -- "error: couldnt parse command"
+parseCommand (Msg cmd password path dat) 
+  | fromJust password /= socketPassword = Left "e0005" -- "error: wrong credentials"
+  | cmd == "store"     = 
+        case dat of
+           Nothing    -> Left "e0003" -- "error: no data received"
+           Just dat'  -> Right $! Store path (base64ToBinary dat')
+  | cmd == "view"      = Right $ View path
+  | cmd == "viewraw"   = Right $ ViewRaw path
+  | otherwise          = Left "e0004" -- "error: couldnt parse command"
+
+
