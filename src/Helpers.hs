@@ -1,3 +1,5 @@
+{-# LANGUAGE ScopedTypeVariables #-}
+
 module Helpers where
 import qualified Data.ByteString.Base64 as B64
 import qualified Data.ByteString as B hiding (unpack, pack)
@@ -24,6 +26,11 @@ import Control.Concurrent.STM
 import Control.Concurrent.STM.TVar
 import qualified Data.HashMap.Strict as HM
 import Network.HTTP.Types.Status
+import System.IO.Error
+import Control.Exception
+import Control.Monad
+import Data.Time.Clock.POSIX
+
 
 -- Helper that organizes the absolute path of file
 makePath :: IndexSettings -> FilePath -> FilePath
@@ -105,8 +112,14 @@ rawData (DataSaved s) = (B.pack s, created201)
 rawData (ViewData _ s) = (s, ok200)
 rawData (ViewRawData _ s) = (s, ok200)
 
---binaryToBase64 :: B.ByteString -> T.Text
---binaryToBase64 b = T.pack . B.unpack . B64.encode $ b
-
 unprocessable422 :: Status
 unprocessable422 = mkStatus 422 "Unprocessable Entity"
+
+-- Get last mod time in Int as epoch time
+getModTime :: FilePath -> IO (Maybe Int)
+getModTime fp = do
+  result <- try (getModificationTime fp)
+  return $! case result of
+      Left (_ :: SomeException) -> Nothing
+      Right t -> Just (round . utcTimeToPOSIXSeconds $! t)
+
