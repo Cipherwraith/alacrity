@@ -55,7 +55,7 @@ parseCommand (Msg cmd password path dat)
   | cmd == "store"     = 
         case dat of
            Nothing    -> Left "e0003" -- "error: no data received"
-           Just dat'  -> Right $! Store path (base64ToBinary dat')
+           Just dat'  -> Right $! Store path $! base64ToBinary dat'
   | cmd == "view"      = Right $ View path
   | cmd == "viewraw"   = Right $ ViewRaw path
   | otherwise          = Left "e0004" -- "error: couldnt parse command"
