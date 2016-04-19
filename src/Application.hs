@@ -23,41 +23,46 @@ import Data.Either
 import Apply
 
 application :: ServerState -> WS.ServerApp
-application state pending = do
+application !state !pending = do
   conn <- WS.acceptRequest pending
   WS.forkPingThread conn 30
-  forever (converse state conn)
+  forever $! converse state conn
+{-# INLINABLE application #-}
 
 converse :: ServerState -> WS.Connection -> IO ()
-converse state conn = do
+converse !state !conn = do
   msg <- WS.receiveData conn :: IO T.Text
-  let req = parseMsg msg
+  let !req = parseMsg msg
   case req of
-    Left errCode -> report conn $ ErrorMsg errCode
-    Right cmd -> do
+    Left !errCode -> report conn $! ErrorMsg errCode
+    Right !cmd -> do
       result <- state `apply` cmd
-      report conn result
+      report conn $! result
+{-# INLINABLE converse #-}
 
 report :: WS.Connection -> ServerOut -> IO ()
-report conn serverOut@(ViewData _ _) = respond conn $! encode serverOut
-report conn serverOut@(ErrorMsg _)   = respond conn $! encode serverOut
-report conn serverOut@(DataSaved _)  = respond conn $! encode serverOut
-report conn (ViewRawData _ output)   = respond conn output
+report !conn !serverOut@(!ViewData _ _) = respond conn $! encode serverOut
+report !conn !serverOut@(!ErrorMsg _)   = respond conn $! encode serverOut
+report !conn !serverOut@(!DataSaved _)  = respond conn $! encode serverOut
+report !conn !(ViewRawData _ !output)   = respond conn $! output
+{-# INLINABLE report #-}
 
 parseMsg :: T.Text -> Either ErrorText Command
-parseMsg msg = case decodeMsg msg of
-  Nothing -> Left "e0002" -- "error: cant decode message"
-  Just cmd -> parseCommand cmd
+parseMsg !msg = case decodeMsg msg of
+  Nothing   -> Left "e0002" -- "error: cant decode message"
+  Just !cmd -> parseCommand cmd
+{-# INLINABLE parseMsg #-}
 
 parseCommand :: Msg -> Either ErrorText Command
-parseCommand (Msg cmd password path dat) 
+parseCommand !(Msg !cmd !password !path !dat) 
   | fromJust password /= socketPassword = Left "e0005" -- "error: wrong credentials"
   | cmd == "store"     = 
         case dat of
-           Nothing    -> Left "e0003" -- "error: no data received"
-           Just dat'  -> Right $! Store path $! base64ToBinary dat'
-  | cmd == "view"      = Right $ View path
-  | cmd == "viewraw"   = Right $ ViewRaw path
-  | otherwise          = Left "e0004" -- "error: couldnt parse command"
+           Nothing    -> Left  $! "e0003" -- "error: no data received"
+           Just !dat' -> Right $! Store path $! base64ToBinary dat'
+  | cmd == "view"      = Right $! View path
+  | cmd == "viewraw"   = Right $! ViewRaw path
+  | otherwise          = Left  $! "e0004" -- "error: couldnt parse command"
+{-# INLINABLE parseCommand #-}
 
 
