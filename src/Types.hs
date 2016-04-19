@@ -59,9 +59,11 @@ instance ToJSON ServerOut where
 
 binaryToBase64 :: B.ByteString -> T.Text
 binaryToBase64 !b = T.pack . B.unpack . B64.encode $! b
+{-# INLINABLE binaryToBase64 #-}
 
 base64ToBinary :: T.Text -> B.ByteString
 base64ToBinary !t = B64.decodeLenient . B.pack . T.unpack $! t
+{-# INLINABLE base64ToBinary #-}
 
 -- Command list
 data Command = Store !(FilePath) !(B.ByteString)
