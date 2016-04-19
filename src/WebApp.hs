@@ -20,29 +20,32 @@ import System.FilePath.Posix
 import Network.HTTP.Types.Status
 
 serveWeb :: Int -> ServerState -> IO ()
-serveWeb port state = scotty port $! do
+serveWeb !port !state = scotty port $! do
   middleware $! gzip $! def { gzipFiles = GzipCompress }
   serveRoutes state
+{-# INLINABLE serveWeb #-}
 
 serveRoutes :: ServerState -> ScottyM ()
 serveRoutes !state = do
 
   -- Matches any GET request and sends to alacrity backend
-  get (function $ \req -> Just [("foo","bar")]) $! do
-    req <- request
-    let path = T.unpack . T.intercalate "/" . pathInfo $ req
-        cmd = ViewRaw path
-        ext = takeExtension $! makePath indexSettings path
-    result <- liftIO $! state `apply` cmd
-    let prepped = rawData result
-    outputResult ext prepped
+  get (function $! \req -> Just [("foo","bar")]) $! do
+    !req <- request
+    let !path = T.unpack . T.intercalate "/" . pathInfo $! req
+        !cmd = ViewRaw path
+        !ext = takeExtension $! makePath indexSettings path
+    !result <- liftIO $! state `apply` cmd
+    let !prepped = rawData result
+    !o <- outputResult ext prepped
+    return $! o
 
   -- 404 Not found. Matches all non `GET`
   notFound $! text "[ Alacrity ] 404: Not Found"
+{-# INLINABLE serveRoutes #-}
 
 -- Takes the output data and outputs it with the appropriate content-type
 outputResult :: String -> (B.ByteString, Status) -> ActionM ()
-outputResult ext (dat, httpStatus) = outResult httpStatus dat $! 
+outputResult !ext !(!dat, !httpStatus) = outResult httpStatus dat $! 
     case ext of
       ".html" -> customOut HTML
       ".json" -> customOut JSON
@@ -60,13 +63,14 @@ outputResult ext (dat, httpStatus) = outResult httpStatus dat $!
       ".js"   -> customOut JS
       ".txt"  -> customOut TXT
       _       -> customOut Unsupported
+{-# INLINABLE outputResult #-}
 
 -- Manages the output content type and binary/text implementations
 --  Natively supported file types: 
 --    txt jpg webm html json gif jpeg php png ico svg css js
 --        (defaults to octet-stream for non-supported file types)
 customOut :: CustomOut -> BL.ByteString -> ActionM ()
-customOut cout pFile = do
+customOut !cout !pFile = do
   case cout of
     HTML        -> setContentType "text/html; charset=utf-8"
     JSON        -> setContentType "application/json; charset=utf-8"
@@ -84,15 +88,20 @@ customOut cout pFile = do
     JS          -> setContentType "text/javascript; charset=utf-8"
     TXT         -> setContentType "text/plain; charset=utf-8"
     Unsupported -> setContentType "application/octet-stream"
-  raw pFile
+  !r <- raw pFile
+  return $! r
+{-# INLINABLE customOut #-}
 
 -- Set the content type of the output
 setContentType :: TL.Text -> ActionM()
-setContentType s = setHeader "Content-Type" s
+setContentType !s = setHeader "Content-Type" $! s
+{-# INLINABLE setContentType #-}
 
 -- Outputs the result using the specified http status code and content type
 outResult :: Status -> B.ByteString -> (BL.ByteString -> ActionM ()) -> ActionM ()
-outResult s d o = do
-  status s
-  o . BL.fromStrict $! d
+outResult !s !d !o = do
+  status $! s
+  !r <- o . BL.fromStrict $! d
+  return $! r
+{-# INLINABLE outResult #-}
 

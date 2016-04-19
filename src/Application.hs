@@ -24,14 +24,14 @@ import Apply
 
 application :: ServerState -> WS.ServerApp
 application !state !pending = do
-  conn <- WS.acceptRequest pending
+  !conn <- WS.acceptRequest pending
   WS.forkPingThread conn 30
   forever $! converse state conn
 {-# INLINABLE application #-}
 
 converse :: ServerState -> WS.Connection -> IO ()
 converse !state !conn = do
-  msg <- WS.receiveData conn :: IO T.Text
+  !msg <- WS.receiveData conn :: IO T.Text
   let !req = parseMsg msg
   case req of
     Left !errCode -> report conn $! ErrorMsg errCode

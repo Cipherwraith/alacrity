@@ -30,7 +30,7 @@ import Web.Scotty
 main :: IO ()
 main = do
   hSetEncoding stdout utf8
-  pageState <- liftIO $ newTVarIO newState
-  _ <- forkIO $ forever $ pageManager pageState
-  forkIO $ WS.runServer "0.0.0.0" serverPort $! application pageState
+  !pageState <- liftIO $! newTVarIO newState
+  _ <- forkIO $! forever $! pageManager pageState
+  forkIO $! WS.runServer "0.0.0.0" serverPort $! application pageState
   serveWeb 3333 pageState

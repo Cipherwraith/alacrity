@@ -25,37 +25,39 @@ import Data.Either
 apply :: ServerState -> Command -> IO ServerOut
 
 -- Store data in the state
-apply state (Store path dat) = do
-  atomically $ do
-    currState <- readTVar state
-    let newPage      = Page path dat deathCounter False
-        updatedPages = HM.insert path newPage (_pages currState)
-    modifyTVar' state $ \s ->
+apply !state !(Store !path !dat) = do
+  atomically $! do
+    !currState <- readTVar state
+    let !newPage      = Page path dat deathCounter False
+        !updatedPages = HM.insert path newPage $! _pages currState
+    modifyTVar' state $! \s ->
       set pages updatedPages s
   return $! DataSaved path
 
 -- View data from the state. Check on harddisk if not in state
-apply state (View path) = do
-  currState <- readTVarIO state
-  let reqData = HM.lookup path $! _pages currState
+apply !state !(View !path) = do
+  !currState <- readTVarIO state
+  let !reqData = HM.lookup path $! _pages currState
   if isNothing reqData
     then do
-      myData <- findData path
-      addDataToState state WellDone path myData
+      !myData <- findData path
+      addDataToState state WellDone path $! myData
     else do
       -- reset cache timeout
       resetCacheTimeout state path
-      return $! ViewData path (_pageData $! fromJust reqData)
+      return $! ViewData path $! _pageData $! fromJust reqData
 
 -- View raw data from the state. Check on harddisk if not in state
-apply state (ViewRaw path) = do
-  currState <- readTVarIO state
-  let reqData = HM.lookup path $! _pages currState
+apply !state !(ViewRaw !path) = do
+  !currState <- readTVarIO state
+  let !reqData = HM.lookup path $! _pages currState
   if isNothing reqData
     then do
-      myData <- findData path
-      addDataToState state Raw path myData
+      !myData <- findData path
+      addDataToState state Raw path $! myData
     else do
       -- reset cache timeout
       resetCacheTimeout state path
-      return $! ViewRawData path (_pageData $! fromJust reqData)
+      return $! ViewRawData path $! _pageData $! fromJust reqData
+
+{-# INLINABLE apply #-}
