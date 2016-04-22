@@ -41,6 +41,12 @@ makePath !(IndexSettings !True !indexAss ) !fp
   | otherwise               = rakedPath fp
 {-# INLINABLE makePath #-}
 
+passwordIsCorrect :: T.Text -> Bool
+passwordIsCorrect !p
+  | p == webPassword = True
+  | otherwise = False
+{-# INLINABLE passwordIsCorrect #-}
+
 -- Function that builds the absolute path, taking into account the server root
 rakedPath :: FilePath -> FilePath
 rakedPath !fp = makeValid . normalise . (<>) (serverRoot <> "/") . mconcat . filter (not . (==) "../") . splitPath $! fp
@@ -50,6 +56,7 @@ rakedPath !fp = makeValid . normalise . (<>) (serverRoot <> "/") . mconcat . fil
 writeData :: FilePath -> B.ByteString -> IO ()
 writeData !path !dat = do
   let !myPath = makePath indexSettings path
+  putStrLn myPath
   !c <- createDirectoryIfMissing True $! takeDirectory myPath
   !w <- B.writeFile myPath $! dat
   return $! w
@@ -136,4 +143,5 @@ getModTime !fp = do
       Left (_ :: SomeException) -> Nothing
       Right !t -> Just (round . utcTimeToPOSIXSeconds $! t)
 {-# INLINABLE getModTime #-}
+
 
