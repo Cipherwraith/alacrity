@@ -8,6 +8,7 @@ import Control.Monad.IO.Class (liftIO)
 import qualified Data.HashMap.Strict as HM
 import Control.Concurrent (threadDelay)
 import Control.Concurrent.STM
+import Data.Monoid
 
 -- This will oversee the pages stored in memory
 --   1. Remove all data with _timeToDie less than or equal to 0
@@ -20,9 +21,15 @@ pageManager :: ServerState -> IO ()
 pageManager !state = do
   !l <- lossyWritePages state
   !m <- managePages state
-  !d <- threadDelay interval
+  !d <- wait
   return $! d
 {-# INLINABLE pageManager #-}
+
+wait :: IO ()
+wait = do
+  liftIO $! putStrLn "                              * Waiting"
+  !d <- threadDelay interval
+  return $! d
 
 -- This is a `lossy` command because it has a chance to miss some files.
 -- This shouldnt be a problem because the next tick will get the files.
@@ -30,10 +37,13 @@ pageManager !state = do
 lossyWritePages :: ServerState -> IO ()
 lossyWritePages !state = do
   !cState <- readTVarIO state
+  liftIO $! putStrLn "                              * Writing Pages"
   let !myPages        = view pages $! cState
       !pagesNotOnDisk = HM.elems $! checkDisk myPages
+      !pageCount      = length pagesNotOnDisk
   !pagesWritten <- mapM writePageToDisk pagesNotOnDisk
   !m <- mapM_ (setHardDiskFlag state) $! pagesWritten
+  liftIO $! putStrLn $! "                              * Wrote: " <> show pageCount
   return $! m
 {-# INLINABLE lossyWritePages #-}
 
@@ -71,6 +81,7 @@ onDiskFilter !p = view onHarddisk $! p
 -- Removes dead pages and decrements the cache timer
 managePages :: ServerState -> IO ()
 managePages !state = do
+  liftIO $! putStrLn "                              * Managing Pages"
   atomically $! do
     !cState <- readTVar state
     let !cState' = HM.mapMaybe removeDeadPages $! _pages cState
