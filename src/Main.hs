@@ -13,6 +13,7 @@ import Control.Concurrent.STM
 import qualified Network.WebSockets as WS
 import System.IO
 import Web.Scotty
+import System.Posix.User
 
 -- Todo:
 --    example ->
