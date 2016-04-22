@@ -5,12 +5,14 @@ import Web.Scotty
 import Network.Wai.Middleware.RequestLogger
 import Network.Wai.Middleware.Gzip
 import Network.Wai.Internal
+import Network.Wai.Parse
 import qualified Data.Text as T
 import qualified Data.Text.IO as T
 import qualified Data.Text.Encoding as T
 import qualified Data.Text.Lazy as TL
 import qualified Data.ByteString.Lazy as BL
-import qualified Data.ByteString as B
+import qualified Data.ByteString as B hiding (pack,unpack)
+import qualified Data.ByteString.Char8 as B (pack, unpack)
 import Control.Monad
 import Control.Monad.IO.Class (liftIO)
 import Apply
@@ -18,6 +20,7 @@ import Helpers
 import Data.Aeson ((.:), (.=), (.:?), decode, encode, ToJSON(..), object, FromJSON(..), Value(..), decodeStrict)
 import System.FilePath.Posix
 import Network.HTTP.Types.Status
+import Safe
 
 serveWeb :: Int -> ServerState -> IO ()
 serveWeb !port !state = scotty port $! do
@@ -25,9 +28,64 @@ serveWeb !port !state = scotty port $! do
   serveRoutes state
 {-# INLINABLE serveWeb #-}
 
+invalidPassword :: ActionM ()
+invalidPassword = do
+  status forbidden403
+  text "NG credentials"
+{-# INLINE invalidPassword #-}
+
+noData :: ActionM ()
+noData = do
+  status forbidden403
+  text "NG no data"
+{-# INLINE noData #-}
+
+--processFiles :: ServerState -> FilePath -> ActionM ()
+--processFiles state loc = do
+--  liftIO $! putStrLn "> POST"
+--  fs <- files
+--  if fs == [] 
+--    then noData
+--    else do
+--      let fs' = [ File (TL.toStrict fieldName) (B.unpack $! fileName fi) (BL.toStrict $ fileContent fi :: B.ByteString) | (fieldName,fi) <- fs ]
+--      case headMay fs' of
+--        Nothing -> noData
+--        Just file -> do
+--          let cmd = processFile state file loc
+--          result <- liftIO $! state `apply` cmd
+--          let !prepped = rawData result
+--              !ext = takeExtension $! makePath indexSettings loc
+--          !o <- outputResult ext prepped
+--          return $! o
+
+processFiles :: ServerState -> FilePath -> B.ByteString -> ActionM ()
+processFiles state loc file = do
+  liftIO $! putStrLn "                              > Post"
+  let !cmd = processFile file loc
+  result <- liftIO $! state `apply` cmd
+  let !prepped = rawData result
+      !ext = takeExtension $! makePath indexSettings loc
+  !o <- outputResult ext prepped
+  return $! o
+  
+{-# INLINE processFiles #-}
+
+processFile :: B.ByteString -> FilePath -> Command
+processFile file loc = Store loc file
+{-# INLINE processFile #-}
+
 serveRoutes :: ServerState -> ScottyM ()
 serveRoutes !state = do
 
+  -- Grabs POSTs to /_write and saves them to alacrity
+  post "/_write" $! do
+    p <- param "password"
+    l <- param "loc" 
+    f <- param "page"
+    if passwordIsCorrect p && (l /= (""::String))
+      then processFiles state l f
+      else invalidPassword
+  
   -- Matches any GET request and sends to alacrity backend
   get (function $! \req -> Just [("foo","bar")]) $! do
     !req <- request
@@ -38,7 +96,7 @@ serveRoutes !state = do
     let !prepped = rawData result
     !o <- outputResult ext prepped
     return $! o
-
+  
   -- 404 Not found. Matches all non `GET`
   notFound $! text "[ Alacrity ] 404: Not Found"
 {-# INLINABLE serveRoutes #-}
