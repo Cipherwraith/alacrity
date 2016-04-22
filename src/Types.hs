@@ -20,6 +20,12 @@ newState = State HM.empty
 
 type ServerState = TVar State
 
+data File = File {
+    _fieldName   :: {-# UNPACK #-} !(T.Text)
+  , _fileName    :: {-# UNPACK #-} !(String)
+  , _fileContent :: {-# UNPACK #-} !(B.ByteString)
+  }
+
 -- Data about our page stored in memory
 data Page = Page { 
     _pagePath    :: {-# UNPACK #-} !(FilePath) -- Path where the file is stored
