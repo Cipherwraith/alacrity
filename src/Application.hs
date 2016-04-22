@@ -21,6 +21,7 @@ import System.Directory (doesFileExist)
 import Helpers
 import Data.Either
 import Apply
+import Debug.Trace
 
 application :: ServerState -> WS.ServerApp
 application !state !pending = do
@@ -59,9 +60,9 @@ parseCommand !(Msg !cmd !password !path !dat)
   | cmd == "store"     = 
         case dat of
            Nothing    -> Left  $! "e0003" -- "error: no data received"
-           Just !dat' -> Right $! Store path $! base64ToBinary dat'
-  | cmd == "view"      = Right $! View path
-  | cmd == "viewraw"   = Right $! ViewRaw path
+           Just !dat' -> trace ("> store") $! Right $! Store path $! base64ToBinary dat'
+  | cmd == "view"      = trace ("> view") $! Right $! View path
+  | cmd == "viewraw"   = trace ("> viewRaw") $! Right $! ViewRaw path
   | otherwise          = Left  $! "e0004" -- "error: couldnt parse command"
 {-# INLINABLE parseCommand #-}
 
