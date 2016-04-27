@@ -9,6 +9,7 @@ import qualified Data.HashMap.Strict as HM
 import Control.Concurrent (threadDelay)
 import Control.Concurrent.STM
 import Data.Monoid
+import Data.Maybe
 
 -- This will oversee the pages stored in memory
 --   1. Remove all data with _timeToDie less than or equal to 0
@@ -42,7 +43,7 @@ lossyWritePages !state = do
       !pagesNotOnDisk = HM.elems $! checkDisk myPages
       !pageCount      = length pagesNotOnDisk
   !pagesWritten <- mapM writePageToDisk pagesNotOnDisk
-  !m <- mapM_ (setHardDiskFlag state) $! pagesWritten
+  !m <- mapM_ (setHardDiskFlag state) $! catMaybes $! pagesWritten
   liftIO $! putStrLn $! "                              * Wrote: " <> show pageCount
   return $! m
 {-# INLINABLE lossyWritePages #-}
@@ -62,10 +63,15 @@ setHDFlag !p = set onHarddisk True $! p
 {-# INLINABLE setHDFlag #-}
 
 -- writes the page to disk, discarding any return data, then returns filepath
-writePageToDisk :: Page -> IO FilePath
+writePageToDisk :: Page -> IO (Maybe FilePath)
 writePageToDisk !p = do
-  !w <- writeData (view pagePath p) $! view pageData p
-  return $! view pagePath p
+  let !timeLeft = _timeToDie p
+  if (timeLeft == 1) 
+    then do
+      !w <- writeData (view pagePath p) $! view pageData p
+      return $! Just $! view pagePath p
+    else do
+      return $! Nothing
 {-# INLINABLE writePageToDisk #-}
 
 -- Returns a hashmap of all the pages that arent already written to harddisk

@@ -30,7 +30,7 @@ data File = File {
 data Page = Page { 
     _pagePath    :: {-# UNPACK #-} !(FilePath) -- Path where the file is stored
   , _pageData    :: {-# UNPACK #-} !(FileData) -- Data stored in the file
-  , _timeToDie   :: {-# UNPACK #-} !(Int)      -- Seconds until the data is removed from State cache
+  , _timeToDie   :: {-# UNPACK #-} !(Int)      -- Ticks until the data is removed from State cache
   , _onHarddisk  :: {-# UNPACK #-} !(Bool)     -- Whether or not this page has been saved to hard disk
   } deriving (Show)
 
