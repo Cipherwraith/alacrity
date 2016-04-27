@@ -44,7 +44,7 @@ lossyWritePages !state = do
       !pageCount      = length pagesNotOnDisk
   !pagesWritten <- mapM writePageToDisk pagesNotOnDisk
   !m <- mapM_ (setHardDiskFlag state) $! catMaybes $! pagesWritten
-  liftIO $! putStrLn $! "                              * Wrote: " <> show pageCount
+  liftIO $! putStrLn $! "                              * Cached: " <> show pageCount
   return $! m
 {-# INLINABLE lossyWritePages #-}
 
