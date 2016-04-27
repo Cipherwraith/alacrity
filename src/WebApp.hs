@@ -40,29 +40,11 @@ noData = do
   text "NG no data"
 {-# INLINE noData #-}
 
---processFiles :: ServerState -> FilePath -> ActionM ()
---processFiles state loc = do
---  liftIO $! putStrLn "> POST"
---  fs <- files
---  if fs == [] 
---    then noData
---    else do
---      let fs' = [ File (TL.toStrict fieldName) (B.unpack $! fileName fi) (BL.toStrict $ fileContent fi :: B.ByteString) | (fieldName,fi) <- fs ]
---      case headMay fs' of
---        Nothing -> noData
---        Just file -> do
---          let cmd = processFile state file loc
---          result <- liftIO $! state `apply` cmd
---          let !prepped = rawData result
---              !ext = takeExtension $! makePath indexSettings loc
---          !o <- outputResult ext prepped
---          return $! o
-
 processFiles :: ServerState -> FilePath -> B.ByteString -> ActionM ()
-processFiles state loc file = do
+processFiles !state !loc !file = do
   liftIO $! putStrLn "                              > Post"
   let !cmd = processFile file loc
-  result <- liftIO $! state `apply` cmd
+  !result <- liftIO $! state `apply` cmd
   let !prepped = rawData result
       !ext = takeExtension $! makePath indexSettings loc
   !o <- outputResult ext prepped
@@ -71,7 +53,7 @@ processFiles state loc file = do
 {-# INLINE processFiles #-}
 
 processFile :: B.ByteString -> FilePath -> Command
-processFile file loc = Store loc file
+processFile !file !loc = Store loc file
 {-# INLINE processFile #-}
 
 serveRoutes :: ServerState -> ScottyM ()
