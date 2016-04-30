@@ -42,7 +42,7 @@ noData = do
 
 processFiles :: ServerState -> FilePath -> B.ByteString -> ActionM ()
 processFiles !state !loc !file = do
-  liftIO $! putStrLn "                              > Post"
+  -- liftIO $! putStrLn "                              > Post"
   let !cmd = processFile file loc
   !result <- liftIO $! state `apply` cmd
   let !prepped = rawData result
