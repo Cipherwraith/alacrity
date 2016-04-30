@@ -32,6 +32,12 @@ import Control.Monad
 import Data.Time.Clock.POSIX
 
 
+getMonitor :: ServerState -> IO T.Text
+getMonitor state = do
+  !cState <- readTVarIO state
+  let !pages = _pages cState
+  return $! T.pack . show $! pages
+
 -- Helper that organizes the absolute path of file
 makePath :: IndexSettings -> FilePath -> FilePath
 makePath !(IndexSettings !False _ ) !fp = rakedPath fp

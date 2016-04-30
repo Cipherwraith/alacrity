@@ -67,7 +67,16 @@ serveRoutes !state = do
     if passwordIsCorrect p && (l /= (""::String))
       then processFiles state l f
       else invalidPassword
-  
+
+  -- Grabs POSTs to /_write and saves them to alacrity
+  post "/_monitor" $! do
+    p <- param "password"
+    if passwordIsCorrect p 
+      then do
+        !monitor <- liftIO $! getMonitor state
+        text $! TL.fromStrict monitor
+      else invalidPassword
+
   -- Matches any GET request and sends to alacrity backend
   get (function $! \req -> Just [("foo","bar")]) $! do
     !req <- request
