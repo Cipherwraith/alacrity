@@ -21,6 +21,7 @@ import Data.Aeson ((.:), (.=), (.:?), decode, encode, ToJSON(..), object, FromJS
 import System.FilePath.Posix
 import Network.HTTP.Types.Status
 import Safe
+import qualified Data.HashMap.Strict as HM
 
 serveWeb :: Int -> ServerState -> IO ()
 serveWeb !port !state = scotty port $! do
@@ -74,7 +75,7 @@ serveRoutes !state = do
     if passwordIsCorrect p 
       then do
         !monitor <- liftIO $! getMonitor state
-        text $! TL.fromStrict monitor
+        text $! TL.fromStrict $! monitor
       else invalidPassword
 
   -- Matches any GET request and sends to alacrity backend

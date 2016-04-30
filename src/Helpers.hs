@@ -36,7 +36,8 @@ getMonitor :: ServerState -> IO T.Text
 getMonitor state = do
   !cState <- readTVarIO state
   let !pages = _pages cState
-  return $! T.pack . show $! pages
+      !myKeys  = HM.keys pages
+  return $! T.pack . show $! myKeys
 
 -- Helper that organizes the absolute path of file
 makePath :: IndexSettings -> FilePath -> FilePath
