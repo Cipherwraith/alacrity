@@ -12,6 +12,7 @@ import qualified Data.Text as T
 import qualified Data.Text.IO as T
 import qualified Data.Text.Encoding as T
 import qualified Data.ByteString.Lazy as BL
+import qualified Data.ByteString.Search as BS
 import qualified Data.HashMap.Strict as HM
 import Data.Maybe
 import Control.Lens
